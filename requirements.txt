@@ -3,4 +3,3 @@ pandas
 plotly
 yfinance
 xgboost
-sklearn.metrics
