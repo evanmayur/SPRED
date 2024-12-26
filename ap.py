@@ -15,10 +15,9 @@ st.image("https://i.postimg.cc/j2tdGvv5/new-removebg-preview.png", width=200)
 # Custom CSS for Translucent Sidebar and Responsiveness
 responsive_css = """
 <style>
-    /* Sidebar adjustments */
-    [data-testid="stSidebar"] {
-        background-color: rgba(0, 0, 0, 0.1);
-        max-width: 100%;
+    /* Remove sidebar */
+    .css-1d391kg {
+        display: none;
     }
     /* General adjustments for smaller screens */
     @media screen and (max-width: 768px) {
@@ -55,11 +54,11 @@ background_css = """
 """
 st.markdown(background_css, unsafe_allow_html=True)
 
-# Sidebar Navigation
-st.sidebar.header("📊 Stock Market Prediction")
+# Main content (Remove sidebar, add user inputs to the main screen)
+st.title("Stock Market Prediction")
 
-# Input Section for Ticker (Dropdown and Custom Input)
-st.sidebar.markdown(
+# Input Section for Ticker (Dropdown and Custom Input on main screen)
+st.markdown(
     """
     <h2 style='font-size: 24px; color: #ff6347; text-align: center;'>Select or Enter a Stock Ticker</h2>
     """, unsafe_allow_html=True)
@@ -78,16 +77,16 @@ stock_tickers = [
 ]
 
 # Dropdown for predefined tickers
-selected_ticker = st.sidebar.selectbox("Choose a Ticker", stock_tickers)
+selected_ticker = st.selectbox("Choose a Ticker", stock_tickers)
 
 # Text input for custom ticker (with large font size and color)
-custom_ticker = st.sidebar.text_input("Or enter a custom ticker:", value="", help="Enter the stock ticker symbol from Yahoo Finance")
+custom_ticker = st.text_input("Or enter a custom ticker:", value="", help="Enter the stock ticker symbol from Yahoo Finance")
 
 # Display both options
 ticker_to_use = custom_ticker if custom_ticker else selected_ticker
 
 # Display chosen ticker with big font and color
-st.sidebar.markdown(f"""
+st.markdown(f"""
     <h2 style='font-size: 28px; color: #ff6347;'>Using Ticker: <b>{ticker_to_use}</b></h2>
 """, unsafe_allow_html=True)
 
@@ -100,16 +99,11 @@ else:
     # Select relevant columns
     data = data[['Open', 'Close', 'High', 'Low']]
 
-    # Title and Description
-    st.title(f"{ticker_to_use.upper()} Stock Price Prediction")
+    # Historical Stock Data
     st.subheader("Historical Stock Data")
     st.write("The table below shows historical data for the selected stock.")
-
-    # Display raw data
     st.dataframe(
-        data.style.set_properties(**{'background-color': '#1e1e1e', 'color': '#ffffff'}),
-        height=400,
-        use_container_width=True
+        data.style.set_properties(**{'background-color': '#1e1e1e', 'color': '#ffffff', 'border': '1px solid #444'})
     )
 
     # Feature Engineering
@@ -134,7 +128,7 @@ else:
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
         r2 = r2_score(y_test, y_pred)
 
-        # Forecast for 10 days
+        # Forecast for 10 business days
         future_days = 10
         last_data = X.iloc[-1].values.reshape(1, -1)
         future_predictions = []
@@ -158,32 +152,21 @@ else:
         fig1.update_layout(template='plotly_dark', title="True vs Predicted Closing Prices", xaxis_title="Date", yaxis_title="Price", legend_title="Legend")
         st.plotly_chart(fig1, use_container_width=True)
 
-        
-# Forecast Visualization
-st.subheader("🔮 Forecasted Prices (Next 10 Business Days)")
-# Ensure the next business day is correctly computed
-next_business_day = pd.Timestamp.today() + pd.offsets.BDay(1)  # Get the next business day (skipping weekends)
-future_dates = pd.date_range(start=next_business_day, periods=future_days, freq='B')  # Use freq='B' to skip weekends
+        # Forecast Visualization
+        st.subheader("🔮 Forecasted Prices (Next 10 Business Days)")
+        # Calculate next 10 business days from today
+        future_dates = pd.date_range(start=pd.Timestamp.today(), periods=future_days, freq='B')  # 'B' for business days
+        fig2 = go.Figure()
+        fig2.add_trace(go.Scatter(x=future_dates, y=future_predictions, mode='lines+markers', name="Forecasted Prices", line=dict(color='#00ff7f')))
+        fig2.update_layout(template='plotly_dark', title="Forecast for Next 10 Business Days", xaxis_title="Date", yaxis_title="Price", legend_title="Legend")
+        st.plotly_chart(fig2, use_container_width=True)
 
-# Format the dates to only show the date (no time)
-future_dates = future_dates.date  # This will remove the time part
-
-fig2 = go.Figure()
-fig2.add_trace(go.Scatter(x=future_dates, y=future_predictions, mode='lines+markers', name="Forecasted Prices", line=dict(color='#00ff7f')))
-fig2.update_layout(template='plotly_dark', title="Forecast for Next 10 Business Days", xaxis_title="Date", yaxis_title="Price", legend_title="Legend")
-st.plotly_chart(fig2, use_container_width=True)
-
-# Forecast Table
+        # Forecast Table
 st.subheader("📋 Forecasted Prices Table")
-forecast_df = pd.DataFrame({"Date": future_dates, "Forecasted Price": future_predictions})
-
-# Display the table without the index
-st.table(forecast_df.style.set_properties(**{'background-color': '#1e1e1e', 'color': '#ffffff'}).hide(axis='index'))
-
-
-
-
-
+forecast_df = pd.DataFrame({"Date": future_dates.date, "Forecasted Price": future_predictions})  # Use .date to remove time
+st.dataframe(
+    forecast_df.style.set_properties(**{'background-color': '#1e1e1e', 'color': '#ffffff', 'border': '1px solid #444'})
+)
 
 
 # Footer
@@ -191,9 +174,6 @@ st.markdown("---")
 st.markdown(
     """
     <div class="footer" style="text-align: center;">
-        <p style="font-size: 1.2rem; color: #ff6347;">© 2025 SPRED Stock Market Prediction App. All rights reserved.</p>
+        <p style="font-size: 1.2rem; color: #ff6347;">© 2024 Stock Market Prediction App. All rights reserved.</p>
     </div>
-    """,
-    unsafe_allow_html=True,
-)
-
+""", unsafe_allow_html=True)
